@@ -29,7 +29,7 @@ Current state of the work is:
 - `Step 1-4`: functionally complete.
 - Shared framework for all four models: complete.
 - `MLP` baseline run: complete.
-- `MLP` final coursework-quality result: not complete yet.
+- `MLP` tuning, final training, and small-sample experiment: complete.
 
 What is already done for the MLP owner:
 
@@ -37,20 +37,20 @@ What is already done for the MLP owner:
 - baseline notebook execution completed once on CPU
 - baseline checkpoint saved to `models/mlp_baseline_best.pt`
 - baseline data pipeline, training loop, evaluation loop, and plotting hooks verified
+- factor-by-factor search completed
+- final best MLP trained and evaluated
+- required `30% / 50% / 100%` small-sample experiment completed
+- final figures, metric tables, config files, and checkpoints saved under `figures/`, `results/`, and `models/`
 
-What still remains before the MLP part can be called fully complete:
+What still remains for submission:
 
-1. run the factor-by-factor MLP search
-2. choose the best MLP config
-3. retrain the final best MLP model
-4. save the final loss and accuracy curves for the report
-5. run the required `30% / 50% / 100%` small-sample comparison
-6. write the MLP analysis paragraph in the report
+1. write the final report section that explains the chosen MLP design
+2. optionally mirror the saved result tables inside the notebook narrative if the team wants a more presentation-ready notebook
 
 Short judgment:
 
-- your infrastructure work is basically done
-- your MLP experiment work is started well, but not fully finished yet
+- your assigned implementation work is essentially complete
+- the remaining work is mainly documentation and report writing
 
 ## 1.2 Current MLP baseline result
 
@@ -86,6 +86,45 @@ Practical target:
 - if tuning moves test accuracy from about `85.8%` to the high `86%` range or better, that is already a meaningful improvement for the report
 - even if the gain is small, the important part is to show a clear search process and explain why the final configuration was chosen
 
+## 1.3 Final MLP result
+
+Best config selected after sequential search:
+
+- hidden layers: `512 -> 256 -> 128`
+- activation: `GELU`
+- normalization: `BatchNorm`
+- dropout: `0.0`
+- optimizer: `SGD`
+- learning rate: `0.05`
+- scheduler: `StepLR(step_size=3, gamma=0.5)`
+- regularization: `L1`, `l1_lambda = 1e-6`
+- final training epochs setting: `15`
+
+Final run summary:
+
+- best epoch: `15`
+- training time: about `523.7s`
+- peak process memory: about `664.8 MB`
+- final checkpoint: `models/mlp_final_best.pt`
+
+Final performance:
+
+- validation accuracy: `0.8816`
+- validation macro F1: `0.8822`
+- test accuracy: `0.8787`
+- test macro F1: `0.8777`
+
+Improvement over the baseline:
+
+- test accuracy: `0.8581 -> 0.8787`, about `+2.05` percentage points
+- test macro F1: `0.8549 -> 0.8777`, about `+2.28` percentage points
+
+Interpretation:
+
+- this is a clearly better result than the baseline
+- the tuned MLP is strong enough to serve as your final MLP contribution
+- for a non-convolutional model on `EMNIST Balanced`, this is a respectable result and gives you enough material to discuss why the chosen settings worked better
+
 ## 2. File map
 
 - `Group8.ipynb`
@@ -94,6 +133,9 @@ Practical target:
 - `hw1_framework.py`
   - reusable framework code
   - teammates should prefer editing here instead of duplicating logic inside the notebook
+- `run_mlp_pipeline.py`
+  - reproducible script used to finish the full MLP workflow
+  - runs search, final training, evaluation, and the small-sample experiment
 - `requirements.txt`
   - runtime dependencies to install before running
 
@@ -234,6 +276,24 @@ Current status of the notebook flags:
 - `RUN_MLP_SEARCH`: still disabled
 - `RUN_MLP_FINAL`: still disabled
 - `RUN_MLP_SMALL_SAMPLE`: still disabled
+
+Current status of the MLP workflow overall:
+
+- the full MLP workflow has already been completed through `run_mlp_pipeline.py`
+- final tables are saved in `results/`
+- final figures are saved in `figures/`
+- final model checkpoints are saved in `models/`
+
+Important output files:
+
+- `results/mlp_best_config.json`
+- `results/mlp_search_results.csv`
+- `results/mlp_metric_summary.csv`
+- `results/mlp_small_sample_results.csv`
+- `results/mlp_experiment_summary.json`
+- `figures/mlp_final_curves.png`
+- `figures/mlp_small_sample.png`
+- `models/mlp_final_best.pt`
 
 ## 6. What each teammate should do next
 
