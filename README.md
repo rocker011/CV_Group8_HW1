@@ -1,171 +1,164 @@
-# CV HW1 Collaboration Handoff
+# CV HW1 协作文档
 
-## 1. What is already implemented
+## 1. 当前完成情况
 
-- `Step 1-4` notebook scaffold is ready:
-  - imports and environment setup
-  - seed/device configuration
-  - EMNIST Balanced loading
-  - dataset statistics
-  - sample visualization
-- `MLP` has a reusable implementation and the shared training pipeline needed for:
-  - baseline training
-  - single-factor hyperparameter exploration
-  - best-model retraining
-  - training curve plotting
-  - test evaluation
-  - small-sample experiments using 30% / 50% / 100% of the training split
-- `CNN / ResNet / ViT` all have working scaffold classes with a unified interface.
-- Shared utilities for later `Step 6` are included:
-  - confusion matrix
-  - precision / recall / F1
-  - first-6 prediction preview
-  - perturbation-based robustness evaluation
+- `Step 1-4` 已完成：
+  - 环境与依赖导入
+  - 随机种子与设备配置
+  - `EMNIST Balanced` 数据集加载
+  - 固定训练/验证/测试划分
+  - 数据集统计信息输出
+  - 样本图像可视化
+- `MLP` 部分已完成：
+  - baseline 训练
+  - 单因素调参搜索
+  - 最终最优模型训练
+  - 测试集评估
+  - 训练曲线保存
+  - 前 6 个样本预测图保存
+  - 混淆矩阵保存
+  - `30% / 50% / 100%` 小样本实验
+- `CNN / ResNet / ViT` 已完成统一框架与模型脚手架，可直接由其他同学继续补充。
+- `Step 6` 需要的共享评估接口也已经预留，包括：
+  - `accuracy / precision / recall / F1`
+  - 混淆矩阵
+  - 前 6 个预测样本展示
+  - 扰动鲁棒性评估
 
-## 1.1 Current progress status
+## 1.1 分工完成度判断
 
-Current state of the work is:
+你负责的实现部分现在可以视为基本完成：
 
-- `Step 1-4`: functionally complete.
-- Shared framework for all four models: complete.
-- `MLP` baseline run: complete.
-- `MLP` tuning, final training, and small-sample experiment: complete.
+- `Step 1-4`：已完成
+- 四类模型共享框架：已完成
+- `MLP baseline`：已完成
+- `MLP` 调参、最终训练、小样本实验：已完成
 
-What is already done for the MLP owner:
+当前剩余工作主要是：
 
-- dependencies installed locally
-- baseline notebook execution completed once on CPU
-- baseline checkpoint saved to `models/mlp_baseline_best.pt`
-- baseline data pipeline, training loop, evaluation loop, and plotting hooks verified
-- factor-by-factor search completed
-- final best MLP trained and evaluated
-- required `30% / 50% / 100%` small-sample experiment completed
-- final figures, metric tables, config files, and checkpoints saved under `figures/`, `results/`, and `models/`
+1. 将现有结果整理进最终报告
+2. 如有需要，把 notebook 中的中文分析文字再补充得更完整一些
+3. 等其他同学完成 `CNN / ResNet / ViT` 后，统一汇总四种模型的最终对比
 
-What still remains for submission:
+简短结论：
 
-1. write the final report section that explains the chosen MLP design
-2. optionally mirror the saved result tables inside the notebook narrative if the team wants a more presentation-ready notebook
+- 你的代码实现任务已经基本收尾
+- 后续重点是报告写作和组内合并
 
-Short judgment:
+## 1.2 MLP Baseline 结果
 
-- your assigned implementation work is essentially complete
-- the remaining work is mainly documentation and report writing
+Baseline 运行情况：
 
-## 1.2 Current MLP baseline result
+- 设备：`CPU`
+- 可训练参数量：`573,999`
+- checkpoint：`models/mlp_baseline_best.pt`
+- 验证集准确率：`0.8621`
+- 验证集宏平均 F1：`0.8602`
+- 测试集准确率：`0.8581`
+- 测试集宏平均 F1：`0.8549`
 
-Baseline run summary:
+说明：
 
-- device: `CPU`
-- trainable parameters: `573,999`
-- checkpoint: `models/mlp_baseline_best.pt`
-- validation accuracy: `0.8621`
-- validation macro F1: `0.8602`
-- test accuracy: `0.8581`
-- test macro F1: `0.8549`
+- 这个结果已经证明数据流程、训练流程、评估流程都没有问题
+- 它适合作为 `MLP` 的起点
+- 但它不是最终提交版结果，因为作业要求展示调参过程和最优模型
 
-Interpretation:
+## 1.3 MLP 最终结果
 
-- this is a solid baseline for an MLP on `EMNIST Balanced`
-- the model is learning correctly and the pipeline is usable
-- however, this should be treated as the starting point, not the final submitted MLP result
+顺序调参后选出的最优配置：
 
-Is it good enough?
+- 隐藏层：`512 -> 256 -> 128`
+- 激活函数：`GELU`
+- 归一化：`BatchNorm`
+- Dropout：`0.0`
+- 优化器：`SGD`
+- 学习率：`0.05`
+- 学习率调度器：`StepLR(step_size=3, gamma=0.5)`
+- 正则化：`L1`
+- `l1_lambda = 1e-6`
+- 最终训练轮数设置：`15`
 
-- yes, as a baseline
-- no, as the final answer for your assigned MLP work
+最终训练结果：
 
-Reason:
+- 最优 epoch：`15`
+- 训练时间：约 `523.7s`
+- 峰值进程内存：约 `664.8 MB`
+- 最终 checkpoint：`models/mlp_final_best.pt`
 
-- the homework explicitly asks for exploration of schedulers, activations, optimizers, normalization, regularization, and dropout
-- the final model should be the best configuration found after that exploration
-- for the report, it is much stronger if the final MLP is better than the baseline and the improvement can be explained clearly
+最终性能：
 
-Practical target:
+- 验证集准确率：`0.8816`
+- 验证集宏平均 F1：`0.8822`
+- 测试集准确率：`0.8787`
+- 测试集宏平均 F1：`0.8777`
 
-- if tuning moves test accuracy from about `85.8%` to the high `86%` range or better, that is already a meaningful improvement for the report
-- even if the gain is small, the important part is to show a clear search process and explain why the final configuration was chosen
+相对 baseline 的提升：
 
-## 1.3 Final MLP result
+- 测试集准确率：`0.8581 -> 0.8787`，提升约 `2.05` 个百分点
+- 测试集宏平均 F1：`0.8549 -> 0.8777`，提升约 `2.28` 个百分点
 
-Best config selected after sequential search:
+结论：
 
-- hidden layers: `512 -> 256 -> 128`
-- activation: `GELU`
-- normalization: `BatchNorm`
-- dropout: `0.0`
-- optimizer: `SGD`
-- learning rate: `0.05`
-- scheduler: `StepLR(step_size=3, gamma=0.5)`
-- regularization: `L1`, `l1_lambda = 1e-6`
-- final training epochs setting: `15`
+- 这个 MLP 结果已经明显优于 baseline
+- 完全可以作为你负责部分的最终结果
+- 报告里已经有足够材料说明“调参确实带来了有效提升”
 
-Final run summary:
+## 1.4 小样本实验结果
 
-- best epoch: `15`
-- training time: about `523.7s`
-- peak process memory: about `664.8 MB`
-- final checkpoint: `models/mlp_final_best.pt`
+使用最终 MLP 配置，在不同训练数据比例下的表现如下：
 
-Final performance:
+- `30%` 训练数据：
+  - 测试集准确率：`0.8601`
+  - 测试集宏平均 F1：`0.8583`
+- `50%` 训练数据：
+  - 测试集准确率：`0.8709`
+  - 测试集宏平均 F1：`0.8699`
+- `100%` 训练数据：
+  - 测试集准确率：`0.8795`
+  - 测试集宏平均 F1：`0.8783`
 
-- validation accuracy: `0.8816`
-- validation macro F1: `0.8822`
-- test accuracy: `0.8787`
-- test macro F1: `0.8777`
+这部分已经可以直接支撑报告中的“小样本学习能力分析”。
 
-Improvement over the baseline:
-
-- test accuracy: `0.8581 -> 0.8787`, about `+2.05` percentage points
-- test macro F1: `0.8549 -> 0.8777`, about `+2.28` percentage points
-
-Interpretation:
-
-- this is a clearly better result than the baseline
-- the tuned MLP is strong enough to serve as your final MLP contribution
-- for a non-convolutional model on `EMNIST Balanced`, this is a respectable result and gives you enough material to discuss why the chosen settings worked better
-
-## 2. File map
+## 2. 文件说明
 
 - `Group8.ipynb`
-  - main collaboration notebook
-  - intended as the final submission entry point
+  - 主 notebook
+  - 已保存执行结果
+  - 其他同学打开后即可直接看到你已完成部分的结果快照
 - `hw1_framework.py`
-  - reusable framework code
-  - teammates should prefer editing here instead of duplicating logic inside the notebook
+  - 共享框架代码
+  - 包含数据加载、模型构建、训练、评估、绘图等公共函数
 - `run_mlp_pipeline.py`
-  - reproducible script used to finish the full MLP workflow
-  - runs search, final training, evaluation, and the small-sample experiment
+  - 可复现实验脚本
+  - 用于完整执行 `MLP` 的搜索、最终训练、评估、画图和小样本实验
 - `requirements.txt`
-  - runtime dependencies to install before running
+  - 依赖列表
 
-## 3. Ownership boundary for collaboration
+## 3. 协作边界
 
-- Shared code should stay centralized in `hw1_framework.py`.
-- The notebook should mostly orchestrate experiments and show results.
-- To reduce merge conflicts:
-  - do not duplicate the training loop in multiple notebook cells
-  - do not create separate data split logic per model
-  - do not change the metric definitions independently
+- 公共逻辑尽量只维护在 `hw1_framework.py`
+- notebook 主要负责组织流程、展示结果、写分析文字
+- 为减少冲突，不建议每个人在 notebook 里各写一套训练循环
+- 各模型同学尽量只改自己对应的模型配置和模型定义
 
-Recommended ownership split:
+推荐分工：
 
-- Student A: `MLP`
-- Student B: `CNN`
-- Student C: `ResNet`
-- Student D: `ViT`
+- 同学 A：`MLP`
+- 同学 B：`CNN`
+- 同学 C：`ResNet`
+- 同学 D：`ViT`
 
-Each teammate should mainly touch:
+每位同学优先修改的位置：
 
-- their model config cell in `Group8.ipynb`
-- their model builder or model class in `hw1_framework.py`
-- their own markdown analysis cells in the notebook/report
+- `Group8.ipynb` 中自己模型对应的配置区块
+- `hw1_framework.py` 中自己模型对应的 builder / model class
+- 自己负责的结果分析文字
 
-## 4. Shared API summary
+## 4. 共享接口说明
 
-### 4.1 Data loading
+### 4.1 数据加载
 
-Use:
+统一使用：
 
 ```python
 runtime_config = hw.get_default_runtime_config(PROJECT_DIR)
@@ -183,7 +176,7 @@ loaders = hw.load_emnist_balanced(
 )
 ```
 
-Returned keys:
+返回字段：
 
 - `train_dataset`
 - `valid_dataset`
@@ -193,25 +186,25 @@ Returned keys:
 - `test_loader`
 - `class_names`
 
-### 4.2 Model builders
+### 4.2 模型构建接口
 
-All models must follow the same input/output convention:
+所有模型都必须遵守同一输入输出规范：
 
-- input shape: `[B, 1, 28, 28]`
-- output shape: `[B, 47]`
-- output must be raw logits
-- do not add `softmax` inside the model
+- 输入形状：`[B, 1, 28, 28]`
+- 输出形状：`[B, 47]`
+- 输出必须是 `logits`
+- 最后一层不要手动加 `softmax`
 
-Builder functions:
+统一 builder：
 
 - `hw.build_mlp(config)`
 - `hw.build_cnn(config)`
 - `hw.build_resnet(config)`
 - `hw.build_vit(config)`
 
-### 4.3 Training entry point
+### 4.3 训练入口
 
-Use the same training wrapper for every model:
+所有模型统一走同一个训练包装：
 
 ```python
 result = hw.run_training_experiment(
@@ -224,67 +217,52 @@ result = hw.run_training_experiment(
 )
 ```
 
-Returned content:
+返回内容：
 
 - `result["model"]`
 - `result["history"]`
 - `result["summary"]`
 - `result["config"]`
 
-### 4.4 Evaluation entry points
+### 4.4 评估接口
 
 - `hw.evaluate_on_test(model, loader, device)`
 - `hw.preview_predictions(model, loader, class_names, device, num_samples=6)`
 - `hw.plot_confusion_matrix_from_preds(y_true, y_pred, class_names, model_name)`
 - `hw.evaluate_robustness(model, loader, device, perturbations)`
 
-## 5. What the MLP part already supports
+## 5. MLP 部分已经支持的功能
 
-Default MLP config:
+默认 `MLP` 配置：
 
-- 3 hidden layers: `512 -> 256 -> 128`
-- configurable activation
-- configurable normalization
-- configurable dropout
-- configurable optimizer
-- configurable scheduler
-- configurable L1 / L2 regularization
+- 3 个隐藏层：`512 -> 256 -> 128`
+- 可切换激活函数
+- 可切换归一化方式
+- 可切换 Dropout
+- 可切换优化器
+- 可切换学习率调度器
+- 支持 `L1 / L2 / 无正则`
 
-Suggested exploration order for the report:
+推荐在报告里按下面顺序描述实验过程：
 
 1. Baseline MLP
-2. Learning-rate scheduler search
-3. Activation search
-4. Optimizer search
-5. Normalization search
-6. Regularization search
-7. Dropout search
-8. Best-config retraining
-9. 30% / 50% / 100% small-sample comparison
+2. 学习率调度器搜索
+3. 激活函数搜索
+4. 优化器搜索
+5. 归一化搜索
+6. 正则化搜索
+7. Dropout 搜索
+8. 最优配置重训
+9. `30% / 50% / 100%` 小样本比较
 
-Recommended execution order inside the notebook:
+当前实际状态：
 
-1. run `RUN_MLP_BASELINE = True` and verify the baseline checkpoint exists
-2. switch `RUN_MLP_SEARCH = True` to perform the single-factor searches
-3. keep the selected `tuned_mlp_config`
-4. switch `RUN_MLP_FINAL = True` to train the best MLP model
-5. switch `RUN_MLP_SMALL_SAMPLE = True` to finish the required small-sample analysis
+- 全部流程已经通过 `run_mlp_pipeline.py` 跑完
+- 结果表保存在 `results/`
+- 图像保存在 `figures/`
+- 最终模型保存在 `models/`
 
-Current status of the notebook flags:
-
-- `RUN_MLP_BASELINE`: enabled and already executed once
-- `RUN_MLP_SEARCH`: still disabled
-- `RUN_MLP_FINAL`: still disabled
-- `RUN_MLP_SMALL_SAMPLE`: still disabled
-
-Current status of the MLP workflow overall:
-
-- the full MLP workflow has already been completed through `run_mlp_pipeline.py`
-- final tables are saved in `results/`
-- final figures are saved in `figures/`
-- final model checkpoints are saved in `models/`
-
-Important output files:
+重要输出文件：
 
 - `results/mlp_best_config.json`
 - `results/mlp_search_results.csv`
@@ -292,118 +270,131 @@ Important output files:
 - `results/mlp_small_sample_results.csv`
 - `results/mlp_experiment_summary.json`
 - `figures/mlp_final_curves.png`
+- `figures/mlp_final_predictions.png`
+- `figures/mlp_final_confusion_matrix.png`
 - `figures/mlp_small_sample.png`
 - `models/mlp_final_best.pt`
 
-## 6. What each teammate should do next
+## 6. 其他三位同学接手建议
 
-### 6.1 CNN teammate
+### 6.1 CNN
 
-Start from:
+从这里开始：
 
 - `hw.get_default_cnn_config()`
 - `hw.build_cnn(config)`
 
-Likely edits:
+建议重点：
 
-- adjust convolution block depth
-- tune channel counts
-- try kernel size / pooling / dropout variants
-- add stronger but still safe regularization if needed
+- 卷积层深度
+- 通道数
+- kernel size / pooling / dropout 组合
+- 正则化策略
 
-### 6.2 ResNet teammate
+### 6.2 ResNet
 
-Start from:
+从这里开始：
 
 - `hw.get_default_resnet_config()`
 - `hw.build_resnet(config)`
 - `ResidualBlock`
 
-Likely edits:
+建议重点：
 
-- deepen the residual stack
-- compare residual vs non-residual CNN behavior
-- tune base channel width and training schedule
+- 残差块层数
+- 是否比普通 CNN 更稳定
+- 通道宽度与训练策略
 
-### 6.3 ViT teammate
+### 6.3 ViT
 
-Start from:
+从这里开始：
 
 - `hw.get_default_vit_config()`
 - `hw.build_vit(config)`
 
-Likely edits:
+建议重点：
 
 - patch size
-- embedding dimension
-- number of heads
-- encoder depth
-- dropout and learning-rate tuning
+- embedding 维度
+- head 数量
+- encoder 深度
+- dropout 与学习率
 
-## 7. Notebook execution order
+## 7. Notebook 使用说明
 
-Run the notebook top to bottom in this order:
+当前 notebook 已经保存了执行结果，推荐按下面方式使用：
 
-1. Environment and imports
-2. Shared config setup
-3. Data loading and visualization
-4. MLP baseline and search
-5. MLP best-model training
-6. MLP small-sample experiment
-7. CNN / ResNet / ViT teammate sections
-8. Shared Step 6 evaluation
+1. 直接打开 `Group8.ipynb`
+2. 查看上半部分的：
+   - 数据划分统计
+   - 样本图像
+   - MLP 结构信息
+3. 查看 `已完成结果快照` 部分：
+   - 已完成步骤状态
+   - baseline 与最终结果对比
+   - 最终配置
+   - 调参结果表
+   - 小样本实验结果
+   - 曲线图 / 预测图 / 混淆矩阵 / 小样本图
 
-## 8. Output convention
+如果只是查看结果，不需要重新训练。
 
-The framework creates these folders automatically:
+如果确实需要重新跑：
+
+- 将 notebook 中对应 `RUN_*` 开关改成 `True`
+- 或直接执行 `run_mlp_pipeline.py`
+
+## 8. 输出规范
+
+框架会自动创建这些目录：
 
 - `data/`
 - `figures/`
 - `models/`
 - `results/`
 
-Recommended saving practice:
+建议统一保存规则：
 
-- model checkpoints: `models/<model_name>_best.pt`
-- figures: `figures/<model_name>_<topic>.png`
-- tables: `results/<model_name>_<topic>.csv`
+- checkpoint：`models/<model_name>_best.pt`
+- 图像：`figures/<model_name>_<topic>.png`
+- 表格：`results/<model_name>_<topic>.csv`
 
-## 9. Report-writing mapping
+## 9. 报告写作对应关系
 
-Use the notebook artifacts to populate the report:
+可以直接按下面映射去写报告：
 
-- dataset intro and samples: `Step 1-4` cells
-- model structure description: model config + model class
-- tuning logic: search plan cells
-- training/validation curves: `plot_training_curves`
-- final metrics: `evaluate_on_test`
-- qualitative examples: `preview_predictions`
-- confusion matrix: `plot_confusion_matrix_from_preds`
-- robustness analysis: `evaluate_robustness`
+- 数据集介绍与样本展示：`Step 1-4`
+- 模型结构说明：配置 + 模型定义
+- 调参过程：搜索结果表
+- 训练过程：loss / accuracy 曲线
+- 最终性能：测试指标表
+- 定性分析：前 6 个预测样本
+- 类别分析：混淆矩阵
+- 小样本分析：`30% / 50% / 100%` 实验结果
 
-## 10. Important cautions
+## 10. 注意事项
 
-- Keep the train/valid/test split fixed across all models.
-- Do not compare models trained with different random splits.
-- Do not place `softmax` in the final layer if you use `CrossEntropyLoss`.
-- If augmentation settings change, note that clearly in the report.
-- For fairness, use the same evaluation metrics and the same test set for all models.
-- Before merging team contributions, make sure all four best-model checkpoints can be loaded by the shared evaluation cells.
-- The EMNIST download is large and torchvision stores multiple raw subsets under `data/EMNIST/raw`; keep that folder ignored by git.
-- The saved `mlp_baseline_best.pt` checkpoint is a local artifact for reruns and is intentionally excluded from version control.
+- 四个模型必须共用同一个固定 train/valid/test 划分
+- 不要给不同模型随意换随机划分，否则结果不可公平比较
+- 使用 `CrossEntropyLoss` 时，模型最后一层不要手动加 `softmax`
+- 如果某位同学改了增强策略，报告里必须明确说明
+- 所有模型要使用同样的测试集和同样的指标
+- 合并前要确认四个最佳模型都能被共享评估单元正确加载
+- `data/EMNIST/raw` 很大，且已被 `.gitignore` 排除，不要手动提交
+- `models/*.pt` 属于本地产物，默认不提交版本库
 
-## 11. Suggested merge checklist
+## 11. 最终合并检查清单
 
-Before final submission, verify:
+提交前建议逐项确认：
 
-1. All four models can train with the shared wrapper.
-2. The notebook can be run from top to bottom without manual edits.
-3. All figures used in the report are generated from the notebook.
-4. Each model has:
-   - best config
-   - training curves
-   - test metrics
-   - confusion matrix
-   - first 6 predictions
-   - robustness results
-5. Small-sample results are presented in the same table format for all models.
+1. 四个模型都能用共享训练器正常训练
+2. notebook 可以从上到下顺序运行
+3. 报告中的图和表都能在 notebook 中找到对应来源
+4. 每个模型至少都有：
+   - 最优配置
+   - 训练曲线
+   - 测试指标
+   - 混淆矩阵
+   - 前 6 个预测样本
+   - 鲁棒性结果
+5. 四个模型的小样本实验表格格式保持一致
