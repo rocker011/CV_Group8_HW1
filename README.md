@@ -22,6 +22,70 @@
   - first-6 prediction preview
   - perturbation-based robustness evaluation
 
+## 1.1 Current progress status
+
+Current state of the work is:
+
+- `Step 1-4`: functionally complete.
+- Shared framework for all four models: complete.
+- `MLP` baseline run: complete.
+- `MLP` final coursework-quality result: not complete yet.
+
+What is already done for the MLP owner:
+
+- dependencies installed locally
+- baseline notebook execution completed once on CPU
+- baseline checkpoint saved to `models/mlp_baseline_best.pt`
+- baseline data pipeline, training loop, evaluation loop, and plotting hooks verified
+
+What still remains before the MLP part can be called fully complete:
+
+1. run the factor-by-factor MLP search
+2. choose the best MLP config
+3. retrain the final best MLP model
+4. save the final loss and accuracy curves for the report
+5. run the required `30% / 50% / 100%` small-sample comparison
+6. write the MLP analysis paragraph in the report
+
+Short judgment:
+
+- your infrastructure work is basically done
+- your MLP experiment work is started well, but not fully finished yet
+
+## 1.2 Current MLP baseline result
+
+Baseline run summary:
+
+- device: `CPU`
+- trainable parameters: `573,999`
+- checkpoint: `models/mlp_baseline_best.pt`
+- validation accuracy: `0.8621`
+- validation macro F1: `0.8602`
+- test accuracy: `0.8581`
+- test macro F1: `0.8549`
+
+Interpretation:
+
+- this is a solid baseline for an MLP on `EMNIST Balanced`
+- the model is learning correctly and the pipeline is usable
+- however, this should be treated as the starting point, not the final submitted MLP result
+
+Is it good enough?
+
+- yes, as a baseline
+- no, as the final answer for your assigned MLP work
+
+Reason:
+
+- the homework explicitly asks for exploration of schedulers, activations, optimizers, normalization, regularization, and dropout
+- the final model should be the best configuration found after that exploration
+- for the report, it is much stronger if the final MLP is better than the baseline and the improvement can be explained clearly
+
+Practical target:
+
+- if tuning moves test accuracy from about `85.8%` to the high `86%` range or better, that is already a meaningful improvement for the report
+- even if the gain is small, the important part is to show a clear search process and explain why the final configuration was chosen
+
 ## 2. File map
 
 - `Group8.ipynb`
@@ -156,6 +220,21 @@ Suggested exploration order for the report:
 8. Best-config retraining
 9. 30% / 50% / 100% small-sample comparison
 
+Recommended execution order inside the notebook:
+
+1. run `RUN_MLP_BASELINE = True` and verify the baseline checkpoint exists
+2. switch `RUN_MLP_SEARCH = True` to perform the single-factor searches
+3. keep the selected `tuned_mlp_config`
+4. switch `RUN_MLP_FINAL = True` to train the best MLP model
+5. switch `RUN_MLP_SMALL_SAMPLE = True` to finish the required small-sample analysis
+
+Current status of the notebook flags:
+
+- `RUN_MLP_BASELINE`: enabled and already executed once
+- `RUN_MLP_SEARCH`: still disabled
+- `RUN_MLP_FINAL`: still disabled
+- `RUN_MLP_SMALL_SAMPLE`: still disabled
+
 ## 6. What each teammate should do next
 
 ### 6.1 CNN teammate
@@ -250,6 +329,8 @@ Use the notebook artifacts to populate the report:
 - If augmentation settings change, note that clearly in the report.
 - For fairness, use the same evaluation metrics and the same test set for all models.
 - Before merging team contributions, make sure all four best-model checkpoints can be loaded by the shared evaluation cells.
+- The EMNIST download is large and torchvision stores multiple raw subsets under `data/EMNIST/raw`; keep that folder ignored by git.
+- The saved `mlp_baseline_best.pt` checkpoint is a local artifact for reruns and is intentionally excluded from version control.
 
 ## 11. Suggested merge checklist
 
