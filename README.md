@@ -1,0 +1,268 @@
+# CV HW1 Collaboration Handoff
+
+## 1. What is already implemented
+
+- `Step 1-4` notebook scaffold is ready:
+  - imports and environment setup
+  - seed/device configuration
+  - EMNIST Balanced loading
+  - dataset statistics
+  - sample visualization
+- `MLP` has a reusable implementation and the shared training pipeline needed for:
+  - baseline training
+  - single-factor hyperparameter exploration
+  - best-model retraining
+  - training curve plotting
+  - test evaluation
+  - small-sample experiments using 30% / 50% / 100% of the training split
+- `CNN / ResNet / ViT` all have working scaffold classes with a unified interface.
+- Shared utilities for later `Step 6` are included:
+  - confusion matrix
+  - precision / recall / F1
+  - first-6 prediction preview
+  - perturbation-based robustness evaluation
+
+## 2. File map
+
+- `Group8.ipynb`
+  - main collaboration notebook
+  - intended as the final submission entry point
+- `hw1_framework.py`
+  - reusable framework code
+  - teammates should prefer editing here instead of duplicating logic inside the notebook
+- `requirements.txt`
+  - runtime dependencies to install before running
+
+## 3. Ownership boundary for collaboration
+
+- Shared code should stay centralized in `hw1_framework.py`.
+- The notebook should mostly orchestrate experiments and show results.
+- To reduce merge conflicts:
+  - do not duplicate the training loop in multiple notebook cells
+  - do not create separate data split logic per model
+  - do not change the metric definitions independently
+
+Recommended ownership split:
+
+- Student A: `MLP`
+- Student B: `CNN`
+- Student C: `ResNet`
+- Student D: `ViT`
+
+Each teammate should mainly touch:
+
+- their model config cell in `Group8.ipynb`
+- their model builder or model class in `hw1_framework.py`
+- their own markdown analysis cells in the notebook/report
+
+## 4. Shared API summary
+
+### 4.1 Data loading
+
+Use:
+
+```python
+runtime_config = hw.get_default_runtime_config(PROJECT_DIR)
+loaders = hw.load_emnist_balanced(
+    data_dir=runtime_config["data_dir"],
+    batch_size=runtime_config["batch_size"],
+    valid_ratio=runtime_config["valid_ratio"],
+    num_workers=runtime_config["num_workers"],
+    subset_ratio=1.0,
+    augment=runtime_config["augment"],
+    rotation_deg=runtime_config["rotation_deg"],
+    noise_std=runtime_config["noise_std"],
+    blur=runtime_config["blur"],
+    seed=runtime_config["seed"],
+)
+```
+
+Returned keys:
+
+- `train_dataset`
+- `valid_dataset`
+- `test_dataset`
+- `train_loader`
+- `valid_loader`
+- `test_loader`
+- `class_names`
+
+### 4.2 Model builders
+
+All models must follow the same input/output convention:
+
+- input shape: `[B, 1, 28, 28]`
+- output shape: `[B, 47]`
+- output must be raw logits
+- do not add `softmax` inside the model
+
+Builder functions:
+
+- `hw.build_mlp(config)`
+- `hw.build_cnn(config)`
+- `hw.build_resnet(config)`
+- `hw.build_vit(config)`
+
+### 4.3 Training entry point
+
+Use the same training wrapper for every model:
+
+```python
+result = hw.run_training_experiment(
+    model_name="mlp_baseline",
+    model_builder=hw.build_mlp,
+    config=mlp_config,
+    loaders=loaders,
+    device=device,
+    output_dir=project_paths["models"],
+)
+```
+
+Returned content:
+
+- `result["model"]`
+- `result["history"]`
+- `result["summary"]`
+- `result["config"]`
+
+### 4.4 Evaluation entry points
+
+- `hw.evaluate_on_test(model, loader, device)`
+- `hw.preview_predictions(model, loader, class_names, device, num_samples=6)`
+- `hw.plot_confusion_matrix_from_preds(y_true, y_pred, class_names, model_name)`
+- `hw.evaluate_robustness(model, loader, device, perturbations)`
+
+## 5. What the MLP part already supports
+
+Default MLP config:
+
+- 3 hidden layers: `512 -> 256 -> 128`
+- configurable activation
+- configurable normalization
+- configurable dropout
+- configurable optimizer
+- configurable scheduler
+- configurable L1 / L2 regularization
+
+Suggested exploration order for the report:
+
+1. Baseline MLP
+2. Learning-rate scheduler search
+3. Activation search
+4. Optimizer search
+5. Normalization search
+6. Regularization search
+7. Dropout search
+8. Best-config retraining
+9. 30% / 50% / 100% small-sample comparison
+
+## 6. What each teammate should do next
+
+### 6.1 CNN teammate
+
+Start from:
+
+- `hw.get_default_cnn_config()`
+- `hw.build_cnn(config)`
+
+Likely edits:
+
+- adjust convolution block depth
+- tune channel counts
+- try kernel size / pooling / dropout variants
+- add stronger but still safe regularization if needed
+
+### 6.2 ResNet teammate
+
+Start from:
+
+- `hw.get_default_resnet_config()`
+- `hw.build_resnet(config)`
+- `ResidualBlock`
+
+Likely edits:
+
+- deepen the residual stack
+- compare residual vs non-residual CNN behavior
+- tune base channel width and training schedule
+
+### 6.3 ViT teammate
+
+Start from:
+
+- `hw.get_default_vit_config()`
+- `hw.build_vit(config)`
+
+Likely edits:
+
+- patch size
+- embedding dimension
+- number of heads
+- encoder depth
+- dropout and learning-rate tuning
+
+## 7. Notebook execution order
+
+Run the notebook top to bottom in this order:
+
+1. Environment and imports
+2. Shared config setup
+3. Data loading and visualization
+4. MLP baseline and search
+5. MLP best-model training
+6. MLP small-sample experiment
+7. CNN / ResNet / ViT teammate sections
+8. Shared Step 6 evaluation
+
+## 8. Output convention
+
+The framework creates these folders automatically:
+
+- `data/`
+- `figures/`
+- `models/`
+- `results/`
+
+Recommended saving practice:
+
+- model checkpoints: `models/<model_name>_best.pt`
+- figures: `figures/<model_name>_<topic>.png`
+- tables: `results/<model_name>_<topic>.csv`
+
+## 9. Report-writing mapping
+
+Use the notebook artifacts to populate the report:
+
+- dataset intro and samples: `Step 1-4` cells
+- model structure description: model config + model class
+- tuning logic: search plan cells
+- training/validation curves: `plot_training_curves`
+- final metrics: `evaluate_on_test`
+- qualitative examples: `preview_predictions`
+- confusion matrix: `plot_confusion_matrix_from_preds`
+- robustness analysis: `evaluate_robustness`
+
+## 10. Important cautions
+
+- Keep the train/valid/test split fixed across all models.
+- Do not compare models trained with different random splits.
+- Do not place `softmax` in the final layer if you use `CrossEntropyLoss`.
+- If augmentation settings change, note that clearly in the report.
+- For fairness, use the same evaluation metrics and the same test set for all models.
+- Before merging team contributions, make sure all four best-model checkpoints can be loaded by the shared evaluation cells.
+
+## 11. Suggested merge checklist
+
+Before final submission, verify:
+
+1. All four models can train with the shared wrapper.
+2. The notebook can be run from top to bottom without manual edits.
+3. All figures used in the report are generated from the notebook.
+4. Each model has:
+   - best config
+   - training curves
+   - test metrics
+   - confusion matrix
+   - first 6 predictions
+   - robustness results
+5. Small-sample results are presented in the same table format for all models.
