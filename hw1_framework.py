@@ -1074,6 +1074,21 @@ def set_nested_config_value(config: dict[str, Any], dotted_key: str, value: Any)
     return updated
 
 
+def apply_config_updates(config: dict[str, Any], updates: dict[str, Any]) -> dict[str, Any]:
+    """Support multi-field candidate updates such as optimizer plus learning rate."""
+    updated = copy.deepcopy(config)
+
+    def _merge_dict(target: dict[str, Any], patch: dict[str, Any]) -> None:
+        for key, value in patch.items():
+            if isinstance(value, dict) and isinstance(target.get(key), dict):
+                _merge_dict(target[key], value)
+            else:
+                target[key] = copy.deepcopy(value)
+
+    _merge_dict(updated, updates)
+    return updated
+
+
 def run_single_factor_search(
     model_name: str,
     model_builder: Callable[[dict[str, Any]], nn.Module],
@@ -1108,6 +1123,62 @@ def run_single_factor_search(
                 "factor": factor_name,
                 "candidate": str(candidate),
                 "best_valid_accuracy": metric,
+                "best_epoch": result["summary"]["best_epoch"],
+                "training_time_sec": result["summary"]["training_time_sec"],
+            }
+        )
+        if metric > best_metric:
+            best_metric = metric
+            best_config = trial_config
+            best_result = result
+
+    return {
+        "results": pd.DataFrame(rows),
+        "best_config": best_config,
+        "best_result": best_result,
+    }
+
+
+def run_candidate_search(
+    model_name: str,
+    model_builder: Callable[[dict[str, Any]], nn.Module],
+    base_config: dict[str, Any],
+    search_name: str,
+    candidates: list[dict[str, Any]],
+    loaders: dict[str, Any],
+    device: torch.device,
+    output_dir: str | Path,
+) -> dict[str, Any]:
+    """
+    Evaluate named candidate config patches and keep the best one.
+
+    Each candidate must contain:
+    - name: label used in tables and checkpoint names
+    - updates: config fields to override for this trial
+    """
+    rows: list[dict[str, Any]] = []
+    best_config = copy.deepcopy(base_config)
+    best_result: dict[str, Any] | None = None
+    best_metric = float("-inf")
+
+    for candidate in candidates:
+        candidate_name = str(candidate["name"])
+        trial_config = apply_config_updates(base_config, candidate.get("updates", {}))
+        result = run_training_experiment(
+            model_name=f"{model_name}_{search_name}_{candidate_name}",
+            model_builder=model_builder,
+            config=trial_config,
+            loaders=loaders,
+            device=device,
+            output_dir=output_dir,
+        )
+        metric = result["summary"]["best_valid_accuracy"]
+        rows.append(
+            {
+                "search_name": search_name,
+                "candidate": candidate_name,
+                "best_valid_accuracy": metric,
+                "best_valid_loss": result["summary"]["best_valid_loss"],
                 "best_epoch": result["summary"]["best_epoch"],
                 "training_time_sec": result["summary"]["training_time_sec"],
             }
