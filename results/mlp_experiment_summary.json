@@ -1,0 +1,63 @@
+{
+  "baseline_valid_metrics": {
+    "loss": 0.3917260357251404,
+    "accuracy": 0.862145390070922,
+    "precision_macro": 0.8716857147664278,
+    "recall_macro": 0.8637366620547886,
+    "f1_macro": 0.8602188593904272
+  },
+  "baseline_test_metrics": {
+    "loss": 0.40550014371567583,
+    "accuracy": 0.8581382978723404,
+    "precision_macro": 0.8637758025031832,
+    "recall_macro": 0.8581382978723402,
+    "f1_macro": 0.854918120615961
+  },
+  "final_config": {
+    "input_dim": 784,
+    "hidden_dims": [
+      512,
+      256,
+      128
+    ],
+    "num_classes": 47,
+    "activation": "gelu",
+    "normalization": "batchnorm",
+    "dropout": 0.0,
+    "optimizer": "sgd",
+    "learning_rate": 0.05,
+    "scheduler": "StepLR",
+    "scheduler_params": {
+      "step_size": 3,
+      "gamma": 0.5
+    },
+    "weight_decay": 0.0,
+    "l1_lambda": 1e-06,
+    "epochs": 15,
+    "early_stopping_patience": 5
+  },
+  "final_summary": {
+    "model_name": "mlp_final",
+    "best_epoch": 15,
+    "best_valid_accuracy": 0.8816489361702128,
+    "best_valid_loss": 0.33962512472842604,
+    "training_time_sec": 523.7171322000213,
+    "peak_process_memory_mb": 664.84765625,
+    "peak_gpu_memory_mb": null,
+    "checkpoint_path": "D:\\PythonProjects\\CV_HW1\\models\\mlp_final_best.pt"
+  },
+  "final_valid_metrics": {
+    "loss": 0.33962512472842604,
+    "accuracy": 0.8816489361702128,
+    "precision_macro": 0.8856422990479833,
+    "recall_macro": 0.8831887307795089,
+    "f1_macro": 0.8821860305348792
+  },
+  "final_test_metrics": {
+    "loss": 0.34657064833539597,
+    "accuracy": 0.8786702127659575,
+    "precision_macro": 0.8805218619636312,
+    "recall_macro": 0.8786702127659572,
+    "f1_macro": 0.8777082367628074
+  }
+}

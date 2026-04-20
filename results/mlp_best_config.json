@@ -1,0 +1,23 @@
+{
+  "input_dim": 784,
+  "hidden_dims": [
+    512,
+    256,
+    128
+  ],
+  "num_classes": 47,
+  "activation": "gelu",
+  "normalization": "batchnorm",
+  "dropout": 0.0,
+  "optimizer": "sgd",
+  "learning_rate": 0.05,
+  "scheduler": "StepLR",
+  "scheduler_params": {
+    "step_size": 3,
+    "gamma": 0.5
+  },
+  "weight_decay": 0.0,
+  "l1_lambda": 1e-06,
+  "epochs": 8,
+  "early_stopping_patience": 3
+}
