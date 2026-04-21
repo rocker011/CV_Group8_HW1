@@ -1,0 +1,122 @@
+{
+  "baseline_parameter_count": 544943,
+  "baseline_valid_metrics": {
+    "loss": 0.33836422000370975,
+    "accuracy": 0.8791666666666667,
+    "precision_macro": 0.8856492020864098,
+    "recall_macro": 0.8808661771500815,
+    "f1_macro": 0.8783425872172789
+  },
+  "baseline_test_metrics": {
+    "loss": 0.3407454517420302,
+    "accuracy": 0.88,
+    "precision_macro": 0.8839687404434227,
+    "recall_macro": 0.88,
+    "f1_macro": 0.8777676661943373
+  },
+  "final_parameter_count": 1258127,
+  "final_config": {
+    "image_size": 28,
+    "patch_size": 4,
+    "embed_dim": 160,
+    "num_heads": 5,
+    "depth": 6,
+    "mlp_ratio": 2.0,
+    "activation": "gelu",
+    "normalization": "batchnorm",
+    "pooling": "cls",
+    "dropout": 0.0,
+    "embedding_dropout": 0.0,
+    "attention_dropout": 0.0,
+    "head_dropout": 0.0,
+    "num_classes": 47,
+    "optimizer": "adamw",
+    "learning_rate": 0.0003,
+    "scheduler": "ReduceLROnPlateau",
+    "scheduler_params": {
+      "t_max": 8,
+      "eta_min": 1e-05,
+      "mode": "min",
+      "factor": 0.5,
+      "patience": 1
+    },
+    "weight_decay": 0.0,
+    "l1_lambda": 0.0,
+    "epochs": 18,
+    "early_stopping_patience": 5
+  },
+  "augmentation_comparison": [
+    {
+      "setting": "no_augmentation",
+      "augment": false,
+      "rotation_deg": 0.0,
+      "noise_std": 0.0,
+      "blur": false,
+      "best_epoch": 15,
+      "best_valid_accuracy": 0.8723404255319149,
+      "best_valid_loss": 0.4348510685964679,
+      "valid_accuracy": 0.8723404255319149,
+      "valid_f1_macro": 0.8730516618007049,
+      "test_accuracy": 0.8739361702127659,
+      "test_f1_macro": 0.8728990563269168,
+      "training_time_sec": 595.4545196641702,
+      "peak_process_memory_mb": 1449.70703125,
+      "peak_gpu_memory_mb": 388.01220703125,
+      "selected_final": false
+    },
+    {
+      "setting": "with_augmentation",
+      "augment": true,
+      "rotation_deg": 10.0,
+      "noise_std": 0.02,
+      "blur": false,
+      "best_epoch": 18,
+      "best_valid_accuracy": 0.888209219858156,
+      "best_valid_loss": 0.30155025173163585,
+      "valid_accuracy": 0.888209219858156,
+      "valid_f1_macro": 0.8891176490683059,
+      "test_accuracy": 0.8907978723404255,
+      "test_f1_macro": 0.8899924965535453,
+      "training_time_sec": 942.139784008963,
+      "peak_process_memory_mb": 1468.6328125,
+      "peak_gpu_memory_mb": 397.677734375,
+      "selected_final": true
+    }
+  ],
+  "selected_training_setting": "with_augmentation",
+  "final_runtime_config": {
+    "augment": true,
+    "rotation_deg": 10.0,
+    "noise_std": 0.02,
+    "blur": false
+  },
+  "final_summary": {
+    "model_name": "vit_final_aug",
+    "best_epoch": 18,
+    "best_valid_accuracy": 0.888209219858156,
+    "best_valid_loss": 0.30155025173163585,
+    "training_time_sec": 942.139784008963,
+    "peak_process_memory_mb": 1468.6328125,
+    "peak_gpu_memory_mb": 397.677734375,
+    "checkpoint_path": "/home/ykshi/cv/CV_Group8_HW1/models/vit_final_best.pt",
+    "training_setting": "with_augmentation",
+    "augment": true,
+    "rotation_deg": 10.0,
+    "noise_std": 0.02,
+    "blur": false
+  },
+  "final_valid_metrics": {
+    "loss": 0.30155025173163585,
+    "accuracy": 0.888209219858156,
+    "precision_macro": 0.8933052504119693,
+    "recall_macro": 0.8904440227410437,
+    "f1_macro": 0.8891176490683059
+  },
+  "final_test_metrics": {
+    "loss": 0.29869019262334134,
+    "accuracy": 0.8907978723404255,
+    "precision_macro": 0.894321764631154,
+    "recall_macro": 0.8907978723404254,
+    "f1_macro": 0.8899924965535453
+  }
+}

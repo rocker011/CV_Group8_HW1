@@ -30,6 +30,18 @@ except ModuleNotFoundError as exc:
         "running the notebook."
     ) from exc
 
+try:
+    from tqdm.auto import tqdm as _tqdm
+except ModuleNotFoundError:
+    _tqdm = None
+
+
+def progress_iter(iterable, **kwargs):
+    """Use tqdm when available, otherwise return the original iterable unchanged."""
+    if _tqdm is None:
+        return iterable
+    return _tqdm(iterable, **kwargs)
+
 
 DEFAULT_CLASS_NAMES = [
     "0",
@@ -561,6 +573,75 @@ class PatchEmbedding(nn.Module):
         return x
 
 
+class TokenNorm(nn.Module):
+    """Normalize token sequences with LayerNorm, BatchNorm, or no normalization."""
+
+    def __init__(self, name: str | None, embed_dim: int) -> None:
+        super().__init__()
+        normalized_name = "none" if name is None else str(name).lower()
+        if normalized_name == "layernorm":
+            self.kind = "layernorm"
+            self.norm = nn.LayerNorm(embed_dim)
+        elif normalized_name == "batchnorm":
+            self.kind = "batchnorm"
+            self.norm = nn.BatchNorm1d(embed_dim)
+        elif normalized_name == "none":
+            self.kind = "none"
+            self.norm = nn.Identity()
+        else:
+            raise ValueError(f"Unsupported token normalization: {name}")
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        if self.kind == "batchnorm":
+            return self.norm(x.transpose(1, 2)).transpose(1, 2)
+        return self.norm(x)
+
+
+class TransformerEncoderBlock(nn.Module):
+    """A lightweight transformer block with configurable activation and normalization."""
+
+    def __init__(
+        self,
+        embed_dim: int,
+        num_heads: int,
+        mlp_ratio: float = 2.0,
+        activation: str = "gelu",
+        normalization: str = "layernorm",
+        dropout: float = 0.1,
+        attention_dropout: float = 0.0,
+    ) -> None:
+        super().__init__()
+        mlp_hidden_dim = int(embed_dim * mlp_ratio)
+        self.norm1 = TokenNorm(normalization, embed_dim)
+        self.attention = nn.MultiheadAttention(
+            embed_dim=embed_dim,
+            num_heads=num_heads,
+            dropout=attention_dropout,
+            batch_first=True,
+        )
+        self.attention_dropout = nn.Dropout(dropout)
+        self.norm2 = TokenNorm(normalization, embed_dim)
+        self.mlp = nn.Sequential(
+            nn.Linear(embed_dim, mlp_hidden_dim),
+            resolve_activation(activation),
+            nn.Dropout(dropout),
+            nn.Linear(mlp_hidden_dim, embed_dim),
+            nn.Dropout(dropout),
+        )
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        attn_input = self.norm1(x)
+        attn_output, _ = self.attention(
+            attn_input,
+            attn_input,
+            attn_input,
+            need_weights=False,
+        )
+        x = x + self.attention_dropout(attn_output)
+        x = x + self.mlp(self.norm2(x))
+        return x
+
+
 class VisionTransformerScaffold(nn.Module):
     """A compact ViT scaffold designed for 28x28 grayscale images."""
 
@@ -572,32 +653,51 @@ class VisionTransformerScaffold(nn.Module):
         num_heads = config.get("num_heads", 4)
         depth = config.get("depth", 4)
         mlp_ratio = config.get("mlp_ratio", 2.0)
+        activation = config.get("activation", "gelu")
+        normalization = config.get("normalization", "layernorm")
+        pooling = config.get("pooling", "cls")
         dropout = config.get("dropout", 0.1)
+        embedding_dropout = config.get("embedding_dropout", dropout)
+        attention_dropout = config.get("attention_dropout", 0.0)
+        head_dropout = config.get("head_dropout", dropout)
         num_classes = config.get("num_classes", 47)
 
         if image_size % patch_size != 0:
             raise ValueError("image_size must be divisible by patch_size for the ViT scaffold")
+        if embed_dim % num_heads != 0:
+            raise ValueError("embed_dim must be divisible by num_heads for the ViT scaffold")
+        if pooling not in {"cls", "mean"}:
+            raise ValueError("pooling must be either 'cls' or 'mean'")
 
         self.patch_embed = PatchEmbedding(image_size=image_size, patch_size=patch_size, embed_dim=embed_dim)
+        self.pooling = pooling
         self.cls_token = nn.Parameter(torch.zeros(1, 1, embed_dim))
         self.position_embedding = nn.Parameter(
             torch.zeros(1, self.patch_embed.num_patches + 1, embed_dim)
         )
-        encoder_layer = nn.TransformerEncoderLayer(
-            d_model=embed_dim,
-            nhead=num_heads,
-            dim_feedforward=int(embed_dim * mlp_ratio),
-            dropout=dropout,
-            batch_first=True,
-            activation="gelu",
-            norm_first=True,
+        self.embedding_dropout = nn.Dropout(embedding_dropout)
+        self.encoder = nn.ModuleList(
+            [
+                TransformerEncoderBlock(
+                    embed_dim=embed_dim,
+                    num_heads=num_heads,
+                    mlp_ratio=mlp_ratio,
+                    activation=activation,
+                    normalization=normalization,
+                    dropout=dropout,
+                    attention_dropout=attention_dropout,
+                )
+                for _ in range(depth)
+            ]
         )
-        self.encoder = nn.TransformerEncoder(encoder_layer, num_layers=depth)
-        self.norm = nn.LayerNorm(embed_dim)
+        self.norm = TokenNorm(normalization, embed_dim)
+        self.head_dropout = nn.Dropout(head_dropout)
         self.head = nn.Linear(embed_dim, num_classes)
 
         nn.init.trunc_normal_(self.cls_token, std=0.02)
         nn.init.trunc_normal_(self.position_embedding, std=0.02)
+        nn.init.trunc_normal_(self.head.weight, std=0.02)
+        nn.init.zeros_(self.head.bias)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         tokens = self.patch_embed(x)
@@ -605,9 +705,16 @@ class VisionTransformerScaffold(nn.Module):
         cls_tokens = self.cls_token.expand(batch_size, -1, -1)
         tokens = torch.cat([cls_tokens, tokens], dim=1)
         tokens = tokens + self.position_embedding[:, : tokens.size(1), :]
-        tokens = self.encoder(tokens)
-        cls_representation = self.norm(tokens[:, 0])
-        return self.head(cls_representation)
+        tokens = self.embedding_dropout(tokens)
+        for block in self.encoder:
+            tokens = block(tokens)
+        tokens = self.norm(tokens)
+        if self.pooling == "mean":
+            representation = tokens[:, 1:].mean(dim=1)
+        else:
+            representation = tokens[:, 0]
+        representation = self.head_dropout(representation)
+        return self.head(representation)
 
 
 def build_mlp(config: dict[str, Any]) -> nn.Module:
@@ -640,6 +747,10 @@ def build_optimizer(model: nn.Module, optimizer_name: str, lr: float, weight_dec
         return torch.optim.SGD(model.parameters(), lr=lr, momentum=0.9, weight_decay=weight_decay)
     if key == "adam":
         return torch.optim.Adam(model.parameters(), lr=lr, weight_decay=weight_decay)
+    if key == "adamw":
+        return torch.optim.AdamW(model.parameters(), lr=lr, weight_decay=weight_decay)
+    if key == "adagrad":
+        return torch.optim.Adagrad(model.parameters(), lr=lr, weight_decay=weight_decay)
     if key == "rmsprop":
         return torch.optim.RMSprop(model.parameters(), lr=lr, weight_decay=weight_decay)
     raise ValueError(f"Unsupported optimizer: {optimizer_name}")
@@ -823,7 +934,14 @@ def run_training_experiment(
     patience_counter = 0
     start_time = time.perf_counter()
 
-    for epoch in range(epochs):
+    epoch_iterator = progress_iter(
+        range(epochs),
+        desc=f"{model_name} epochs",
+        leave=False,
+        dynamic_ncols=True,
+    )
+
+    for epoch in epoch_iterator:
         train_metrics = train_one_epoch(
             model=model,
             loader=loaders["train_loader"],
@@ -864,8 +982,18 @@ def run_training_experiment(
         else:
             patience_counter += 1
 
+        if hasattr(epoch_iterator, "set_postfix"):
+            epoch_iterator.set_postfix(
+                train_loss=f"{train_metrics['loss']:.4f}",
+                valid_acc=f"{valid_metrics['accuracy']:.4f}",
+                best_acc=f"{best_valid_accuracy:.4f}",
+            )
+
         if patience_counter >= early_stopping_patience:
             break
+
+    if hasattr(epoch_iterator, "close"):
+        epoch_iterator.close()
 
     training_time_sec = time.perf_counter() - start_time
     model.load_state_dict(best_state)
@@ -1107,7 +1235,14 @@ def run_single_factor_search(
     best_result: dict[str, Any] | None = None
     best_metric = float("-inf")
 
-    for candidate in candidate_values:
+    candidate_iterator = progress_iter(
+        candidate_values,
+        desc=f"{model_name} {factor_name}",
+        leave=False,
+        dynamic_ncols=True,
+    )
+
+    for candidate in candidate_iterator:
         trial_config = set_nested_config_value(base_config, factor_name, candidate)
         result = run_training_experiment(
             model_name=f"{model_name}_{factor_name.replace('.', '_')}_{candidate}",
@@ -1131,6 +1266,15 @@ def run_single_factor_search(
             best_metric = metric
             best_config = trial_config
             best_result = result
+
+        if hasattr(candidate_iterator, "set_postfix"):
+            candidate_iterator.set_postfix(
+                candidate=str(candidate),
+                best_acc=f"{best_metric:.4f}",
+            )
+
+    if hasattr(candidate_iterator, "close"):
+        candidate_iterator.close()
 
     return {
         "results": pd.DataFrame(rows),
@@ -1161,7 +1305,14 @@ def run_candidate_search(
     best_result: dict[str, Any] | None = None
     best_metric = float("-inf")
 
-    for candidate in candidates:
+    candidate_iterator = progress_iter(
+        candidates,
+        desc=f"{model_name} {search_name}",
+        leave=False,
+        dynamic_ncols=True,
+    )
+
+    for candidate in candidate_iterator:
         candidate_name = str(candidate["name"])
         trial_config = apply_config_updates(base_config, candidate.get("updates", {}))
         result = run_training_experiment(
@@ -1188,6 +1339,15 @@ def run_candidate_search(
             best_config = trial_config
             best_result = result
 
+        if hasattr(candidate_iterator, "set_postfix"):
+            candidate_iterator.set_postfix(
+                candidate=candidate_name,
+                best_acc=f"{best_metric:.4f}",
+            )
+
+    if hasattr(candidate_iterator, "close"):
+        candidate_iterator.close()
+
     return {
         "results": pd.DataFrame(rows),
         "best_config": best_config,
@@ -1208,7 +1368,14 @@ def run_small_sample_experiment(
     rows: list[dict[str, Any]] = []
     results: dict[str, Any] = {}
 
-    for ratio in sample_ratios:
+    ratio_iterator = progress_iter(
+        sample_ratios,
+        desc=f"{model_name} small-sample",
+        leave=False,
+        dynamic_ncols=True,
+    )
+
+    for ratio in ratio_iterator:
         loaders = load_emnist_balanced(
             data_dir=runtime_config["data_dir"],
             batch_size=runtime_config["batch_size"],
@@ -1244,6 +1411,15 @@ def run_small_sample_experiment(
             "experiment": experiment,
             "test_metrics": test_metrics,
         }
+
+        if hasattr(ratio_iterator, "set_postfix"):
+            ratio_iterator.set_postfix(
+                ratio=f"{int(ratio * 100)}%",
+                test_acc=f"{test_metrics['accuracy']:.4f}",
+            )
+
+    if hasattr(ratio_iterator, "close"):
+        ratio_iterator.close()
 
     return pd.DataFrame(rows), results
 
@@ -1324,13 +1500,20 @@ def get_default_vit_config() -> dict[str, Any]:
         "num_heads": 4,
         "depth": 4,
         "mlp_ratio": 2.0,
+        "activation": "gelu",
+        "normalization": "layernorm",
+        "pooling": "cls",
         "dropout": 0.1,
+        "embedding_dropout": 0.1,
+        "attention_dropout": 0.0,
+        "head_dropout": 0.1,
         "num_classes": 47,
-        "optimizer": "adam",
+        "optimizer": "adamw",
         "learning_rate": 3e-4,
         "scheduler": "CosineAnnealingLR",
-        "scheduler_params": {"t_max": 12, "eta_min": 1e-5},
-        "weight_decay": 1e-4,
-        "epochs": 15,
+        "scheduler_params": {"t_max": 18, "eta_min": 1e-5},
+        "weight_decay": 5e-4,
+        "l1_lambda": 0.0,
+        "epochs": 18,
         "early_stopping_patience": 5,
     }
