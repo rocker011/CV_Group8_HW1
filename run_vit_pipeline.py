@@ -35,6 +35,61 @@ def save_json(path: Path, payload: dict) -> None:
         json.dump(payload, f, indent=2, ensure_ascii=False, default=str)
 
 
+def attach_search_metadata(results_df: pd.DataFrame, candidates: list[dict]) -> pd.DataFrame:
+    """Expand candidate config patches into explicit columns for easier notebook/report display."""
+    metadata_rows = []
+    for candidate in candidates:
+        row = {"candidate": str(candidate["name"])}
+        for key, value in candidate.get("updates", {}).items():
+            if isinstance(value, dict):
+                continue
+            row[key] = value
+        metadata_rows.append(row)
+
+    if not metadata_rows:
+        return results_df
+
+    metadata_df = pd.DataFrame(metadata_rows).drop_duplicates(subset=["candidate"])
+    enriched_df = results_df.merge(metadata_df, on="candidate", how="left")
+
+    preferred_order = [
+        "search_name",
+        "candidate",
+        "patch_size",
+        "embed_dim",
+        "num_heads",
+        "depth",
+        "mlp_ratio",
+        "scheduler",
+        "activation",
+        "optimizer",
+        "learning_rate",
+        "normalization",
+        "dropout",
+        "weight_decay",
+        "l1_lambda",
+        "best_valid_accuracy",
+        "best_valid_loss",
+        "best_epoch",
+        "training_time_sec",
+    ]
+    ordered_columns = [column for column in preferred_order if column in enriched_df.columns]
+    remaining_columns = [column for column in enriched_df.columns if column not in ordered_columns]
+    return enriched_df[ordered_columns + remaining_columns]
+
+
+def mark_selected_candidates(results_df: pd.DataFrame) -> pd.DataFrame:
+    """Mark one selected candidate per search block using validation metrics only."""
+    marked_df = results_df.copy()
+    marked_df["selected"] = False
+    ranked_df = marked_df.sort_values(
+        ["best_valid_accuracy", "best_valid_loss", "training_time_sec"],
+        ascending=[False, True, True],
+    )
+    marked_df.loc[ranked_df.index[0], "selected"] = True
+    return marked_df
+
+
 def build_loaders(runtime_config: dict, subset_ratio: float = 1.0) -> dict:
     return hw.load_emnist_balanced(
         data_dir=runtime_config["data_dir"],
@@ -416,42 +471,16 @@ def main() -> None:
 
     search_tables: list[pd.DataFrame] = []
     tuned_config = copy.deepcopy(search_config)
+    vit_architecture_search_grid = hw.get_default_vit_architecture_search_grid()
+    architecture_candidates = hw.build_vit_architecture_candidates(
+        image_size=search_config["image_size"],
+        search_grid=vit_architecture_search_grid,
+    )
 
     search_spaces = [
         (
             "architecture",
-            [
-                {
-                    "name": "patch7_embed96_depth4_heads4",
-                    "updates": {
-                        "patch_size": 7,
-                        "embed_dim": 96,
-                        "num_heads": 4,
-                        "depth": 4,
-                        "mlp_ratio": 2.0,
-                    },
-                },
-                {
-                    "name": "patch4_embed128_depth4_heads4",
-                    "updates": {
-                        "patch_size": 4,
-                        "embed_dim": 128,
-                        "num_heads": 4,
-                        "depth": 4,
-                        "mlp_ratio": 2.0,
-                    },
-                },
-                {
-                    "name": "patch4_embed160_depth6_heads5",
-                    "updates": {
-                        "patch_size": 4,
-                        "embed_dim": 160,
-                        "num_heads": 5,
-                        "depth": 6,
-                        "mlp_ratio": 2.0,
-                    },
-                },
-            ],
+            architecture_candidates,
         ),
         (
             "scheduler",
@@ -546,6 +575,14 @@ def main() -> None:
     ]
 
     print("Starting ViT factor search...")
+    print(
+        "Architecture grid candidates: "
+        f"{len(architecture_candidates)} valid combinations from "
+        f"patch_size={vit_architecture_search_grid['patch_size']}, "
+        f"embed_dim={vit_architecture_search_grid['embed_dim']}, "
+        f"num_heads={vit_architecture_search_grid['num_heads']}, "
+        f"depth={vit_architecture_search_grid['depth']}"
+    )
     search_block_iterator = progress_iter(
         search_spaces,
         desc="vit search blocks",
@@ -564,8 +601,7 @@ def main() -> None:
             device=device,
             output_dir=project_paths["models"] / "search",
         )
-        result_df = result["results"]
-        result_df["selected"] = result_df["best_valid_accuracy"] == result_df["best_valid_accuracy"].max()
+        result_df = mark_selected_candidates(attach_search_metadata(result["results"], candidates))
         search_tables.append(result_df)
         tuned_config = result["best_config"]
         if hasattr(search_block_iterator, "set_postfix"):
@@ -575,6 +611,14 @@ def main() -> None:
             )
         print(f"Finished search block: {search_name}")
         print(result_df.to_string(index=False))
+        selected_row = result_df.loc[result_df["selected"]].iloc[0]
+        print(
+            "Selected candidate based on validation metrics only: "
+            f"{selected_row['candidate']} | "
+            f"best_valid_accuracy={selected_row['best_valid_accuracy']:.4f} | "
+            f"best_valid_loss={selected_row['best_valid_loss']:.4f} | "
+            f"best_epoch={int(selected_row['best_epoch'])}"
+        )
         print()
 
     if hasattr(search_block_iterator, "close"):
