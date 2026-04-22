@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import copy
+import itertools
 import math
 import random
 import time
@@ -1215,6 +1216,64 @@ def apply_config_updates(config: dict[str, Any], updates: dict[str, Any]) -> dic
 
     _merge_dict(updated, updates)
     return updated
+
+
+def get_default_vit_architecture_search_grid() -> dict[str, list[int]]:
+    """Keep the ViT architecture grid consistent between scripts and notebook cells."""
+    return {
+        "patch_size": [7, 4],
+        "embed_dim": [96, 128, 160],
+        "num_heads": [4, 5],
+        "depth": [4, 6],
+    }
+
+
+def build_vit_architecture_candidates(
+    image_size: int,
+    search_grid: dict[str, list[int]] | None = None,
+) -> list[dict[str, Any]]:
+    """
+    Build a valid grid of ViT architecture candidates.
+
+    The grid jointly searches patch size, embedding width, attention head count,
+    and encoder depth, while filtering out invalid combinations such as
+    patch sizes that do not divide the image size or embed dimensions that are
+    not divisible by the number of attention heads.
+    """
+    if search_grid is None:
+        search_grid = get_default_vit_architecture_search_grid()
+
+    patch_sizes = list(search_grid.get("patch_size", [4]))
+    embed_dims = list(search_grid.get("embed_dim", [128]))
+    num_heads_values = list(search_grid.get("num_heads", [4]))
+    depths = list(search_grid.get("depth", [4]))
+
+    candidates: list[dict[str, Any]] = []
+    for patch_size, embed_dim, num_heads, depth in itertools.product(
+        patch_sizes,
+        embed_dims,
+        num_heads_values,
+        depths,
+    ):
+        if image_size % patch_size != 0:
+            continue
+        if embed_dim % num_heads != 0:
+            continue
+        candidates.append(
+            {
+                "name": f"patch{patch_size}_embed{embed_dim}_depth{depth}_heads{num_heads}",
+                "updates": {
+                    "patch_size": patch_size,
+                    "embed_dim": embed_dim,
+                    "num_heads": num_heads,
+                    "depth": depth,
+                },
+            }
+        )
+
+    if not candidates:
+        raise ValueError("The ViT architecture search grid did not produce any valid candidates.")
+    return candidates
 
 
 def run_single_factor_search(

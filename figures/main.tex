@@ -1,0 +1,304 @@
+%!TeX program = xelatex
+\documentclass[12pt,hyperref,a4paper,UTF8]{ctexart}
+\usepackage{USTCReport}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{float}
+\usepackage{array}
+\usepackage{caption}
+\usepackage{chngcntr}
+\usepackage{placeins}
+
+\counterwithin{figure}{section}
+\counterwithin{table}{section}
+\renewcommand{\thefigure}{\thesection.\arabic{figure}}
+\renewcommand{\thetable}{\thesection.\arabic{table}}
+\renewcommand{\figurename}{图}
+\renewcommand{\tablename}{表}
+
+\captionsetup{
+    font=small,
+    labelfont=bf,
+    labelsep=space,
+    format=plain
+}
+\captionsetup[figure]{
+    name=图,
+    justification=centering,
+    singlelinecheck=false,
+    skip=8pt
+}
+\captionsetup[table]{
+    name=表,
+    justification=centering,
+    singlelinecheck=false,
+    skip=6pt
+}
+
+\newcommand{\includereportimage}[3]{%
+    \IfFileExists{#1}{%
+        \includegraphics[width=0.88\textwidth]{#1}%
+    }{%
+        \IfFileExists{#2}{%
+            \includegraphics[width=0.88\textwidth]{#2}%
+        }{%
+            \fbox{%
+                \parbox[c][0.26\textheight][c]{0.76\textwidth}{%
+                    \centering #3\\[4pt]
+                    图片待补充。后续可将实际图片路径替换到正文对应的 \texttt{\textbackslash includereportimage} 参数中。%
+                }%
+            }%
+        }%
+    }%
+}
+
+%%-------------------------------正文开始---------------------------%%
+\begin{document}
+
+%%-----------------------封面--------------------%%
+%封面在USTCReport.sty中修改
+\cover
+\thispagestyle{empty} % 首页不显示页码
+%%------------------摘要-------------%% 
+\newpage
+\begin{abstract}
+
+\end{abstract}
+
+
+
+%%--------------------------目录页------------------------%%
+% \newpage
+% \tableofcontents
+
+%%------------------------正文页从这里开始-------------------%
+
+
+\section{项目说明}
+\subsection{数据集介绍}
+\subsection{模型构建说明}
+\subsubsection{MLP}
+
+
+\subsubsection{CNNs}
+
+
+\subsubsection{ResNet}
+
+
+\subsubsection{Vision Transformer}
+
+本文在 EMNIST Balanced 数据集上实现了一个面向 $28\times 28$ 单通道灰度字符图像的轻量化 Vision Transformer（ViT）分类模型。与标准 ViT 面向大尺寸自然图像的设定不同，本实验针对输入分辨率较小、类别数较多且字符局部笔画信息重要的特点，对模型结构进行了缩减和适配。模型首先使用 \texttt{PatchEmbedding} 模块将输入图像划分为若干 patch，并通过卷积投影将每个 patch 映射到固定维度的 token 表示；随后在 token 序列前拼接一个可学习的 \texttt{[CLS]} token，并加入位置编码，以保留不同 patch 的空间位置信息。
+
+\begin{table}[htbp]
+\centering
+\caption{ViT 最终模型结构与训练配置}
+\label{tab:vit_final_config}
+\begin{tabular}{>{\raggedright\arraybackslash}p{0.34\textwidth} >{\raggedright\arraybackslash}p{0.48\textwidth}}
+\toprule
+配置项 & 最终取值 \\
+\midrule
+输入图像尺寸 & $28\times 28$ 灰度图像 \\
+Patch size & 4 \\
+Embedding dimension & 160 \\
+Attention heads & 5 \\
+Encoder depth & 6 \\
+MLP ratio & 2.0 \\
+Activation & GELU \\
+Normalization & BatchNorm \\
+Pooling & \texttt{cls} pooling \\
+Optimizer & AdamW \\
+Learning rate & $3\times 10^{-4}$ \\
+Scheduler & \texttt{ReduceLROnPlateau} \\
+Dropout & 0.0 \\
+Weight decay / L1 & 0 / 0 \\
+Training augmentation & Rotation $10^\circ$ + RandomAffine + GaussianNoise(0.02) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+如表~\ref{tab:vit_final_config} 所示，最终 ViT 模型在结构上采用了较细粒度的 patch 划分和中等规模的编码器深度，以兼顾局部笔画建模能力与全局依赖关系建模能力。编码器部分由多层 Transformer Encoder Block 堆叠而成，每一层均包含多头自注意力、前馈网络、残差连接与归一化模块。为了便于课程实验中的系统比较，代码实现中支持 patch size、嵌入维度、注意力头数、编码器深度、激活函数、归一化方式、dropout 和优化器等配置的灵活切换。
+
+模型输出阶段采用 \texttt{cls} pooling，即取最终 \texttt{[CLS]} token 的表征作为整幅图像的全局特征，并通过线性分类头输出 47 维 logits，直接与 \texttt{CrossEntropyLoss} 配合完成监督训练。最终实验中选出的最优 ViT 配置为：patch size 为 4，嵌入维度为 160，注意力头数为 5，编码器深度为 6，MLP expansion ratio 为 2.0，激活函数采用 GELU，归一化采用 BatchNorm，池化方式采用 \texttt{cls}，优化器采用 AdamW，学习率设为 $3\times 10^{-4}$，学习率调度器采用 \texttt{ReduceLROnPlateau}。在训练阶段，最终模型使用了随机旋转、轻微随机仿射变换和高斯噪声注入的数据增强策略，以提升模型对字符形变和噪声扰动的适应能力。
+
+\section{模型设计思路}
+
+
+\subsection{MLP}
+
+
+\subsection{CNNs}
+
+
+\subsection{ResNet}
+
+
+\subsection{Vision Transformer}
+
+ViT 部分的设计重点主要有两个方面：一是让 Transformer 结构适应 EMNIST 这类小尺寸灰度字符图像；二是在有限训练资源下尽可能稳定地发挥自注意力模型的全局建模能力。由于输入图像仅为 $28\times 28$，若直接采用常见的大模型配置，会导致参数冗余、训练成本偏高，同时也不利于小图像上的有效学习。因此，本实验优先选择轻量化结构，并通过逐步调参的方式寻找更适合当前任务的配置。
+
+在模型结构上，首先围绕 patch size、嵌入维度、注意力头数和编码器深度进行了搜索。实验表明，patch size 为 7 的较粗粒度划分虽然训练速度较快，但会丢失较多字符笔画细节，验证集准确率仅为 66.74\%；而 patch size 为 4 配合更高的嵌入维度和更深的编码器，可以更充分地保留局部结构并建立全局关系，其中 \texttt{patch4\_embed160\_depth6\_heads5} 这一配置在结构搜索阶段取得了 72.67\% 的最佳验证集准确率，因此被选作后续调优的起点。
+
+\begin{table}[htbp]
+\centering
+\caption{ViT 顺序调参的关键结果}
+\label{tab:vit_search_summary}
+\begin{tabular}{>{\raggedright\arraybackslash}p{0.20\textwidth} >{\raggedright\arraybackslash}p{0.34\textwidth} c}
+\toprule
+搜索维度 & 选中的最优配置 & 最佳验证准确率 \\
+\midrule
+Architecture & \texttt{patch4\_embed160\_depth6\_heads5} & 72.67\% \\
+Scheduler & \texttt{ReduceLROnPlateau} & 78.31\% \\
+Activation & GELU & 79.11\% \\
+Optimizer & AdamW ($3\times 10^{-4}$) & 80.48\% \\
+Normalization & BatchNorm & 82.41\% \\
+Dropout & 0.0 & 83.05\% \\
+Regularization & None & 83.78\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\noindent 表~\ref{tab:vit_search_summary} 总结了顺序调参过程中各阶段的最优选择。可以看到，本文采用了先固定当前最优配置、再继续搜索下一类超参数的策略。具体而言，在较小训练子集上依次比较学习率调度器、激活函数、优化器、归一化方式、dropout 和正则化策略，从而控制实验成本并减少组合爆炸带来的时间开销。搜索结果显示，\texttt{ReduceLROnPlateau} 优于 \texttt{StepLR} 和 \texttt{CosineAnnealingLR}，说明在本任务中依据验证损失进行自适应降学习率更有利于后期收敛；GELU 优于 ReLU 与 ELU，说明其平滑的非线性映射更适合 Transformer 的前馈网络；AdamW 优于 Adam 和 RMSprop，表明解耦权重衰减的优化方式更适合当前 ViT 架构。
+
+归一化实验中，BatchNorm 的效果优于 LayerNorm 和不使用归一化，这一点与标准 Transformer 中常见的 LayerNorm 结论并不完全一致，但在本项目的小尺寸字符图像任务上表现更稳定。另一方面，dropout 和显式正则化并未带来额外收益：dropout 为 0.0 时效果最好，L1 与 L2 正则化均略低于不使用额外正则化的设置。这说明当前轻量化 ViT 的容量并未大到必须依赖强正则约束，相比之下，合理的数据增强更能有效提升泛化性能。因此，在最终训练阶段，本文进一步比较了“无增强”和“带增强”两种训练方案，并将数据增强作为最终模型的重要组成部分。
+
+从训练现象来看，ViT 在较粗粒度 patch 和较浅网络深度下更容易出现表示能力不足的问题，表现为验证准确率长期偏低，可视为一种欠拟合现象；而在模型容量提升之后，如果不配合合适的调度策略和数据增强，模型虽然可以继续优化训练目标，但泛化收益有限。为缓解这一问题，本文最终采用了更细粒度的 patch 划分、更稳定的学习率衰减策略以及轻量级数据增强，从而在不显著增加训练不稳定性的前提下提升了验证集和测试集性能。
+
+
+\section{结果分析}
+
+\subsection{MLP}
+
+
+\subsection{CNNs}
+
+
+\subsection{ResNet}
+
+
+\subsection{Vision Transformer}
+
+从整体结果来看，ViT 在 EMNIST Balanced 数据集上取得了较好的分类性能。基线模型参数量为 544,943，在验证集上的准确率为 87.92\%，在测试集上的准确率为 88.00\%，宏平均 F1 为 87.78\%。在完成结构与训练策略调优后，最终模型参数量增加到 1,258,127，并在增强训练设置下取得了更优结果：验证集准确率达到 88.82\%，测试集准确率达到 89.08\%，测试集宏平均 F1 达到 89.00\%。相较于基线模型，最终模型在测试集准确率上提升了约 1.08 个百分点，在宏平均 F1 上提升了约 1.22 个百分点，说明所采用的结构调整与训练策略改进是有效的。
+
+\begin{table}[htbp]
+\centering
+\caption{ViT 基线模型与最终模型性能对比}
+\label{tab:vit_baseline_final}
+\begin{tabular}{lccccc}
+\toprule
+模型 & 参数量 & 验证准确率 & 测试损失 & 测试准确率 & 测试宏平均 F1 \\
+\midrule
+Baseline ViT & 544,943 & 87.92\% & 0.3407 & 88.00\% & 87.78\% \\
+Final ViT & 1,258,127 & 88.82\% & 0.2987 & 89.08\% & 89.00\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\noindent 如表~\ref{tab:vit_baseline_final} 所示，ViT 在调参后实现了稳定提升，尤其是在测试集宏平均 F1 上改善更明显，说明模型对 47 个类别的整体判别能力有所增强。从调参过程可以看出，ViT 对结构设计和训练策略都较为敏感。结构搜索阶段中，较大的 patch 和较浅的编码器深度难以充分捕捉字符细节，而较细粒度的 patch 划分与更强的特征表达能力有助于提高模型表现。调度器、激活函数、优化器和归一化方式的结果也表明，ViT 并不是简单套用标准配置就能达到最优效果，而是需要结合当前数据规模和任务特点进行针对性调整。尤其值得注意的是，BatchNorm 在本实验中的表现优于 LayerNorm，这体现出课程项目场景下模型行为与经典大规模视觉 Transformer 场景并不完全一致。
+
+\begin{figure}[htbp]
+\centering
+\includereportimage{figures/vit_final_curves.png}{../Desktop/CV_Group8_HW1/figures/vit_final_curves.png}{ViT 训练曲线}
+\caption{ViT 最终模型训练曲线}
+\label{fig:vit_curves}
+\end{figure}
+
+\noindent 图~\ref{fig:vit_curves} 展示了最终模型在训练过程中的损失和准确率变化趋势。可以看到，模型在训练后期仍能保持较平稳的收敛过程，没有出现明显的振荡或发散现象，这说明最终采用的学习率调度策略和优化器组合是较为合适的。与此同时，验证集准确率与训练集准确率之间没有出现过大的偏离，也从侧面说明最终配置在泛化性能和训练稳定性之间取得了较好的平衡。
+
+数据增强对最终性能的提升尤为明显。在不使用增强时，模型测试集准确率为 87.39\%，宏平均 F1 为 87.29\%；加入随机旋转（$10^\circ$）、轻微随机仿射变换与高斯噪声（标准差 0.02）后，测试集准确率提升到 89.08\%，宏平均 F1 提升到 89.00\%。这说明对于手写字符分类任务而言，适度增强可以帮助模型学习到更稳定的形状表示，从而缓解样本书写风格差异带来的影响。与此同时，最终模型完整训练耗时约 942.14\,s，峰值进程内存约为 1468.63\,MB，峰值 GPU 显存约为 397.68\,MB，虽然计算开销高于基线模型，但仍处于本次课程实验可以接受的范围内。
+
+\begin{table}[htbp]
+\centering
+\caption{ViT 数据增强策略对比}
+\label{tab:vit_aug_compare}
+\begin{tabular}{lcccc}
+\toprule
+训练设置 & 验证准确率 & 测试准确率 & 测试宏平均 F1 & 训练时间 / s \\
+\midrule
+No augmentation & 87.23\% & 87.39\% & 87.29\% & 595.45 \\
+With augmentation & 88.82\% & 89.08\% & 89.00\% & 942.14 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\noindent 表~\ref{tab:vit_aug_compare} 和图~\ref{fig:vit_augmentation} 更直观地说明了增强策略带来的收益。虽然加入增强后训练时间有所增加，但验证集与测试集准确率均同步提升，说明该策略带来的收益并非偶然波动，而是对泛化能力的真实改善。
+
+\begin{figure}[htbp]
+\centering
+\includereportimage{figures/vit_augmentation_comparison.png}{../Desktop/CV_Group8_HW1/figures/vit_augmentation_comparison.png}{ViT 增强策略对比图}
+\caption{ViT 数据增强效果对比}
+\label{fig:vit_augmentation}
+\end{figure}
+
+小样本实验进一步反映了 ViT 对训练数据规模的依赖性。当仅使用 30\% 训练数据时，模型测试集准确率为 85.37\%，宏平均 F1 为 85.11\%；训练数据提升到 50\% 后，测试集准确率上升到 87.52\%，宏平均 F1 为 87.41\%；在 100\% 训练数据下，测试集准确率进一步达到 89.66\%，宏平均 F1 达到 89.52\%。可以看出，随着样本规模增加，ViT 性能持续稳定提升，说明其全局建模优势需要依赖较充分的数据支撑。
+
+\begin{table}[htbp]
+\centering
+\caption{ViT 小样本实验结果}
+\label{tab:vit_small_sample}
+\begin{tabular}{ccccc}
+\toprule
+训练数据比例 & 训练样本数 & 最佳验证准确率 & 测试准确率 & 测试宏平均 F1 \\
+\midrule
+30\% & 30,456 & 85.35\% & 85.37\% & 85.11\% \\
+50\% & 50,760 & 87.61\% & 87.52\% & 87.41\% \\
+100\% & 101,520 & 89.34\% & 89.66\% & 89.52\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\noindent 表~\ref{tab:vit_small_sample} 与图~\ref{fig:vit_small_sample} 表明，ViT 在数据规模增加时能够持续获得收益，且准确率与宏平均 F1 的增长趋势基本一致。这意味着模型不仅整体分类正确率提升，而且不同类别上的识别表现也更加均衡。总体而言，当前 ViT 模型已经能够在字符分类任务中取得稳定且较优的结果，并验证了轻量化 Transformer 结构在小尺寸图像分类任务中的可行性。
+
+\begin{figure}[htbp]
+\centering
+\includereportimage{figures/vit_small_sample.png}{../Desktop/CV_Group8_HW1/figures/vit_small_sample.png}{ViT 小样本实验结果图}
+\caption{ViT 小样本实验性能对比}
+\label{fig:vit_small_sample}
+\end{figure}
+
+\FloatBarrier
+
+
+
+\section{总结与思考}
+
+
+
+
+
+
+
+%\section{定理环境}
+%\begin{Theorem}
+%\end{Theorem}
+%
+%\begin{Lemma}
+%\end{Lemma}
+%
+%\begin{Corollary}
+%\end{Corollary}
+%
+%\begin{Proposition}
+%\end{Proposition}
+%
+%\begin{Definition}
+%\end{Definition}
+%
+%\begin{Example}
+%\end{Example}
+%
+%\begin{proof}
+%\end{proof}
+
+
+
+
+
+%%----------- 参考文献 -------------------%%
+%在reference.bib文件中填写参考文献
+
+\bibliography{reference}
+\bibliographystyle{ieeetr}
+
+
+\end{document}
