@@ -1,0 +1,65 @@
+{
+  "baseline_valid_metrics": {
+    "loss": 0.3535926917343275,
+    "accuracy": 0.8749113475177305,
+    "precision_macro": 0.8817084184666107,
+    "recall_macro": 0.8766591651333875,
+    "f1_macro": 0.8742314975225441
+  },
+  "baseline_test_metrics": {
+    "loss": 0.35855851985038595,
+    "accuracy": 0.8754255319148936,
+    "precision_macro": 0.880649499974088,
+    "recall_macro": 0.8754255319148936,
+    "f1_macro": 0.8734373727346879
+  },
+  "final_config": {
+    "channels": [
+      32,
+      64,
+      128
+    ],
+    "num_classes": 47,
+    "activation": "relu",
+    "normalization": "batchnorm",
+    "dropout": 0.0,
+    "optimizer": "sgd",
+    "learning_rate": 0.05,
+    "scheduler": "ReduceLROnPlateau",
+    "scheduler_params": {
+      "step_size": 5,
+      "gamma": 0.5,
+      "mode": "min",
+      "factor": 0.5,
+      "patience": 1
+    },
+    "weight_decay": 0.0001,
+    "epochs": 20,
+    "early_stopping_patience": 5,
+    "l1_lambda": 0.0
+  },
+  "final_summary": {
+    "model_name": "cnn_final",
+    "best_epoch": 19,
+    "best_valid_accuracy": 0.8925531914893617,
+    "best_valid_loss": 0.30334578782108657,
+    "training_time_sec": 688.121509622084,
+    "peak_process_memory_mb": 1428.46875,
+    "peak_gpu_memory_mb": null,
+    "checkpoint_path": "/home/bo/CV_Group8_HW1/models/cnn_final_best.pt"
+  },
+  "final_valid_metrics": {
+    "loss": 0.30334578782108657,
+    "accuracy": 0.8925531914893617,
+    "precision_macro": 0.8985186981411618,
+    "recall_macro": 0.8944511157300953,
+    "f1_macro": 0.8929846258811974
+  },
+  "final_test_metrics": {
+    "loss": 0.30977188736834427,
+    "accuracy": 0.8931382978723404,
+    "precision_macro": 0.8964706921642798,
+    "recall_macro": 0.8931382978723406,
+    "f1_macro": 0.8919522417711593
+  }
+}

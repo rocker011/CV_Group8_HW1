@@ -1,0 +1,25 @@
+{
+  "rows": [
+    {
+      "sample_ratio": 0.3,
+      "train_samples": 30456,
+      "best_valid_accuracy": 0.8823581560283688,
+      "test_accuracy": 0.8807446808510638,
+      "test_f1_macro": 0.8787094434244043
+    },
+    {
+      "sample_ratio": 0.5,
+      "train_samples": 50760,
+      "best_valid_accuracy": 0.8887411347517731,
+      "test_accuracy": 0.8877659574468085,
+      "test_f1_macro": 0.8866924146974492
+    },
+    {
+      "sample_ratio": 1.0,
+      "train_samples": 101520,
+      "best_valid_accuracy": 0.8923758865248227,
+      "test_accuracy": 0.8912234042553191,
+      "test_f1_macro": 0.8898671845351638
+    }
+  ]
+}

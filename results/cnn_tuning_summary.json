@@ -1,0 +1,92 @@
+{
+  "best_config_after_search": {
+    "channels": [
+      32,
+      64,
+      128
+    ],
+    "num_classes": 47,
+    "activation": "relu",
+    "normalization": "batchnorm",
+    "dropout": 0.0,
+    "optimizer": "sgd",
+    "learning_rate": 0.05,
+    "scheduler": "ReduceLROnPlateau",
+    "scheduler_params": {
+      "step_size": 5,
+      "gamma": 0.5,
+      "mode": "min",
+      "factor": 0.5,
+      "patience": 1
+    },
+    "weight_decay": 0.0001,
+    "epochs": 8,
+    "early_stopping_patience": 3,
+    "l1_lambda": 0.0
+  },
+  "selected_candidates": {
+    "channels": {
+      "search_name": "channels",
+      "candidate": "c32_64_128",
+      "best_valid_accuracy": 0.8457446808510638,
+      "best_valid_loss": 0.47568854068187955,
+      "best_epoch": 8,
+      "training_time_sec": 142.1580524139572,
+      "selected": true
+    },
+    "scheduler": {
+      "search_name": "scheduler",
+      "candidate": "ReduceLROnPlateau",
+      "best_valid_accuracy": 0.8437056737588653,
+      "best_valid_loss": 0.477109731680958,
+      "best_epoch": 7,
+      "training_time_sec": 141.8793467551004,
+      "selected": true
+    },
+    "activation": {
+      "search_name": "activation",
+      "candidate": "relu",
+      "best_valid_accuracy": 0.848404255319149,
+      "best_valid_loss": 0.45643636554690964,
+      "best_epoch": 8,
+      "training_time_sec": 142.43980941688642,
+      "selected": true
+    },
+    "optimizer": {
+      "search_name": "optimizer",
+      "candidate": "sgd_5e-2",
+      "best_valid_accuracy": 0.8552304964539007,
+      "best_valid_loss": 0.4204087241321591,
+      "best_epoch": 8,
+      "training_time_sec": 140.136511515826,
+      "selected": true
+    },
+    "normalization": {
+      "search_name": "normalization",
+      "candidate": "batchnorm",
+      "best_valid_accuracy": 0.8592198581560284,
+      "best_valid_loss": 0.41210408324890946,
+      "best_epoch": 8,
+      "training_time_sec": 140.82875537895598,
+      "selected": true
+    },
+    "dropout": {
+      "search_name": "dropout",
+      "candidate": "dropout_0.0",
+      "best_valid_accuracy": 0.8595744680851064,
+      "best_valid_loss": 0.40137230479125435,
+      "best_epoch": 7,
+      "training_time_sec": 139.45502436393872,
+      "selected": true
+    },
+    "regularization": {
+      "search_name": "regularization",
+      "candidate": "l2",
+      "best_valid_accuracy": 0.8667553191489362,
+      "best_valid_loss": 0.39169368912987673,
+      "best_epoch": 7,
+      "training_time_sec": 138.93515396793373,
+      "selected": true
+    }
+  }
+}

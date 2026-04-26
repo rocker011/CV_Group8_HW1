@@ -1,0 +1,25 @@
+{
+  "channels": [
+    32,
+    64,
+    128
+  ],
+  "num_classes": 47,
+  "activation": "relu",
+  "normalization": "batchnorm",
+  "dropout": 0.0,
+  "optimizer": "sgd",
+  "learning_rate": 0.05,
+  "scheduler": "ReduceLROnPlateau",
+  "scheduler_params": {
+    "step_size": 5,
+    "gamma": 0.5,
+    "mode": "min",
+    "factor": 0.5,
+    "patience": 1
+  },
+  "weight_decay": 0.0001,
+  "epochs": 8,
+  "early_stopping_patience": 3,
+  "l1_lambda": 0.0
+}
