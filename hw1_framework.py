@@ -41,8 +41,11 @@ def progress_iter(iterable, **kwargs):
     """Use tqdm when available, otherwise return the original iterable unchanged."""
     if _tqdm is None:
         return iterable
+        
+    # 强制加上限速参数：最少间隔 1 秒才刷新一次屏幕
+    kwargs['mininterval'] = 1.0 
+    
     return _tqdm(iterable, **kwargs)
-
 
 DEFAULT_CLASS_NAMES = [
     "0",
