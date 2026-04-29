@@ -6,3 +6,4 @@ models/search/
 models/small_sample/
 
 *.pyc
+.omx/
